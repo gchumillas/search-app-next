@@ -1,33 +1,25 @@
-'use client'
-import { useState, useEffect } from 'react'
-import { useParams } from 'next/navigation'
-import { Product } from '@/app/types'
 import { getDrugDetails } from '@/app/actions/getDrugDetails'
 import Header from '@/app/components/layout/header'
 import DrugDetails from '@/app/components/drug/details'
 
-const DrugPage = () => {
-  const { slug } = useParams() as { slug: string }
-  const [product, setProduct] = useState<Product | null>(null)
-  const [loading, setLoading] = useState(true)
+// TODO: Usa la fuerza. Usa el server-side
+export default async function DrugPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params
 
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!slug) return
-      setLoading(true)
-      try {
-        const data = await getDrugDetails(slug)
-        setProduct(data)
-      } catch (error) {
-        console.error('Error fetching data:', error)
-        setProduct(null)
-      } finally {
-        setLoading(false)
-      }
-    }
+  // El producto se carga en el lado del servidor (server-side).
+  // Si miras el código de la página (View Page Source), verás que el contenido
+  // ya está disponible antes de ser visualizado.
+  //
+  // Por tanto, no necesitamos ningún loading.
+  //
+  // En realidad está es la fortaleza de NextJS. Poder generar contenido
+  // en el lado del servidor para que esté disponible de forma inmediata
+  // en el lado del cliente.
+  const product = await getDrugDetails(slug)
 
-    fetchData()
-  }, [slug])
+  if (!product) {
+    return <div>product not found</div>
+  }
 
   return (
     <>
@@ -35,21 +27,13 @@ const DrugPage = () => {
 
       <div className="container mx-auto max-w-5xl p-6 flex flex-col md:flex-row gap-6">
         <div className="md:w-2/3">
-          {loading ? (
-            <p>Loading results...</p>
-          ) : product ? (
-            <DrugDetails
-              product={product.product}
-              status={product.status}
-              description={product.description}
-            />
-          ) : (
-            <p>No results found.</p>
-          )}
+          <DrugDetails
+            product={product.product}
+            status={product.status}
+            description={product.description}
+          />
         </div>
       </div>
     </>
   )
 }
-
-export default DrugPage
